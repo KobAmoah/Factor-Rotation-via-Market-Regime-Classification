@@ -61,11 +61,11 @@ class HMMHybrid(QCAlgorithm):
         # drop stocks which don't have the information we need.
         # you can try replacing those factors with your own factors here
 
-        filtered_fine = [x for x in fine if x.ValuationRatios.EVtoEBIT
+        filtered_fine = [x for x in fine if (x.ValuationRatios.EVtoEBIT) > 0
                                         and x.ValuationRatios.PBRatio
                                         and x.MarketCap 
-                                        and x.ValuationRatios.FCFYield
-                                        and x.ValuationRatios.EarningYield
+                                        and (x.ValuationRatios.FCFYield) > 0
+                                        and (x.ValuationRatios.EarningYield) > 0
                                         and x.OperationRatios.LongTermDebtEquityRatio.Value
                                         and x.OperationRatios.OperationMargin.Value]
 
