@@ -41,3 +41,6 @@ While the idea is targeted to institutional investors, for retail investors(indi
 
 ### Conclusion:
 The strategy aims to optimize returns by adapting to different market regimes using a Hidden Markov Model, with a focus on switching between a Growth model and a Value factor model based on detected market conditions. The high-pass filter helps confirm regime shifts before making portfolio adjustments.
+
+## Credits
+I am incredibly grateful to Matthew Wang for his research on the topic. His idea of dynamically adapting a portfolio between factor models using a Hidden Markov Model, which classifies market regimes (bear, bull, or neutral) inspired this project.
