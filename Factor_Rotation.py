@@ -191,7 +191,6 @@ class HMMHybrid(QCAlgorithm):
             self.GrowthModel()
 
     def Value(self):
-        #self.Log("Value")
         for kvp in self.Portfolio:
             if kvp.Value.Invested and not (kvp.Key in self.value_long):
                 self.SetHoldings(kvp.Key, 0)
@@ -199,7 +198,6 @@ class HMMHybrid(QCAlgorithm):
             self.SetHoldings(i, 1/len(self.value_long))
 
     def GrowthModel(self):
-        #self.Log("Growth Model")
         for kvp in self.Portfolio:
             if kvp.Value.Invested and not kvp.Key in self.growth_long:
                 self.SetHoldings(kvp.Key, 0)
@@ -218,11 +216,7 @@ class HMMHybrid(QCAlgorithm):
         hidden_states = 3;
         em_iterations = 75;
         data_length = 2520;
-        # num_models = 7;
-
-        #history = self.History("SPY", 2718, Resolution.Daily)
-        #prices = list(history.loc["SPY"]['close'])
-
+        
         history = self.History(self.symbols, data_length, Resolution.Daily)
         for symbol in self.symbols:
             if not history.empty:
