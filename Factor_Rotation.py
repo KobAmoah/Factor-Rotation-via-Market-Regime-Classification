@@ -1,7 +1,9 @@
 """
 Created on Sat Feb  24 2024
 
-This program derives off initial code by Matthew Wang that sets up a class for Factor Investing with Market Regime Classification to be tested on Quantconnect. I make a couple of changes principally with the substitution of FamaFrench framework with an explicit Value and Growth Factor investing. The core hypothesis remains the same - to prove that a hidden markov model that rotates between factor models depending on market conditions can perform better than the individual factor model themselves.
+This program derives off initial code by Matthew Wang that sets up a class for Factor Investing with Market Regime Classification to be tested on Quantconnect. 
+I make a couple of changes principally with the substitution of Fama-French framework with an explicit focus on Value and Growth Factor investing. 
+The core hypothesis remains the same - to prove that a hidden markov model that rotates between factor models depending on market conditions can perform better than the individual factor model themselves.
 
 original author: Matthew Wang
 https://medium.com/@matthewwang_91639/algorithmic-factor-investing-with-market-regime-classification-6bc2f8c7168b
