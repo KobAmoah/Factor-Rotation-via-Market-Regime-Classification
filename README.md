@@ -10,7 +10,7 @@ The following adapts an implementation by ["Matthew Wang"](https://medium.com/@m
 
 However, the Fama-French framework's plight is well documented which Robert D. Arnott and his co-authors attribute to poor factor definitions. To cater for this, I adapt the original code and make more explicit the Value and Growth Factors as well as apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection. I also incorporate Quality into the Value Factor model as the implicit goal of rotation is to deliver a factor framework that does well over all economic cycles. Lastly, Matthew Wang's original idea is dependent on Leverage applied in a long-short framework which is rebalanced daily. This application is long only and is rebalanced monthly.
 
-The idea is targeted as an institutional strategy, however, for retail investors(individual), monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
+The idea is targeted as an institutional strategy, however, for retail investors(individuals), it should be noted monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
 
 *** I have not fully backtested the code in Quantconnect yet, but do hope to do so at some point. 
 
