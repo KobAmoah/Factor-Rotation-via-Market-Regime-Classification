@@ -129,7 +129,7 @@ class HMMHybrid(QCAlgorithm):
         growth_data = {'Stock': [x.Symbol for x in filtered_fine_growth],
                     'MorningstarSectorCode': [x.AssetClassification.MorningstarSectorCode for x in filtered_fine_growth],
                     'TotalDividendPerShare.ThreeMonths': [x.EarningReports.TotalDividendPerShare.ThreeMonths if hasattr(x.EarningReports, 'TotalDividendPerShare') else 0 for x in filtered_fine_growth],
-                    'ROE.Value': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
+                    'ROE': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
                     'RevenueGrowth': [x.OperationRatios.RevenueGrowth.Value for x in filtered_fine_growth],
                     'BasicEPS.TwelveMonths': [x.EarningReports.BasicEPS.TwelveMonths for x in filtered_fine_growth]}
         df_growth = pd.DataFrame(growth_data)
@@ -137,7 +137,7 @@ class HMMHybrid(QCAlgorithm):
 
         # Group by sector for Growth stocks
         growth_grouped = df_growth.groupby('MorningstarSectorCode')
-        factors_growth = ['TotalDividendPerShare.ThreeMonths', 'ROE.Value', 'RevenueGrowth','BasicEPS.TwelveMonths']
+        factors_growth = ['TotalDividendPerShare.ThreeMonths', 'ROE', 'RevenueGrowth','BasicEPS.TwelveMonths']
 
         self.growth_long = []
         self.growth_score = []
@@ -146,7 +146,7 @@ class HMMHybrid(QCAlgorithm):
             factor_scores_growth = pd.DataFrame()
 
             for factor_growth in factors_growth:
-                if factor_growth not in [ 'ROE.Value','RevenueGrowth.Value']:
+                if factor_growth not in [ 'ROE','RevenueGrowth']:
                     group_growth[factor_growth] = (group_growth[factor_growth] - group_growth[factor_growth].mean())/group_growth[factor_growth].std()
                     group_growth[factor_growth] = group_growth[factor_growth].rank(ascending=True)
                     factor_scores_growth[factor_growth + '_Score'] = group_growth[factor_growth]
