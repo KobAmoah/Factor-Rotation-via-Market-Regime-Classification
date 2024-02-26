@@ -4,9 +4,10 @@ Created on Sat Feb  24 2024
     This program derives off initial code by Matthew Wang that sets up a class for Factor Investing with Market Regime 
 Classification to be tested on Quantconnect. It differs from Matthew's implementation with the following changes:
 1. I substitute the FamaFrench framework with an explicit focus on Value and Growth Factor investing. 
-2. I incorporate quality in the Value Factor model to make it more robust to shifting economic cycles.
-3. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
-4. This application is long-only and is rebalanced monthly.
+2. I apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection.
+3. I incorporate quality in the Value Factor model to make it more robust to shifting economic cycles.
+4. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
+5. This application is long-only and is rebalanced monthly.
 
     The core hypothesis remains the same - to prove that a hidden markov model that rotates between factor models depending on
 market conditions can perform better than the individual factor model themselves. 
