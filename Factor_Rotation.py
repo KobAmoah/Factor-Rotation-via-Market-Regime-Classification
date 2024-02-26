@@ -6,11 +6,12 @@ Classification to be tested on Quantconnect. It differs from Matthew's implement
 1. I substitute the FamaFrench framework with an explicit focus on Value and Growth Factor investing. 
 2. I apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection.
 3. I incorporate quality in the Value Factor model to make it more robust to shifting economic cycles.
-4. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
-5. This application is long-only and is rebalanced monthly.
+4. This application is long-only and is rebalanced monthly.
+5. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
 
     The core hypothesis remains the same - to prove that a hidden markov model that rotates between factor models depending on
 market conditions can perform better than the individual factor model themselves. 
+
 original author: Matthew Wang
 https://medium.com/@matthewwang_91639/algorithmic-factor-investing-with-market-regime-classification-6bc2f8c7168b
 
@@ -94,7 +95,7 @@ class HMMHybrid(QCAlgorithm):
 
         value_factors = ['PBRatio', 'MarketCap','EarningYield','EVtoEBIT','FCFYield','LongTermDebtEquityRatio','OperationMargin']
         self.value_long = []
-        self.value_score = []
+        self.value_score = np.array()
         for sector, group in value_grouped:
             factor_scores = pd.DataFrame()
 
@@ -117,7 +118,7 @@ class HMMHybrid(QCAlgorithm):
             decile_threshold = int(len(group_sorted)*0.1)
             selected_group = group_sorted.iloc[:decile_threshold]
             self.value_long.extend(selected_group['Stock'])
-            self.value_score.extend(selected_group['Total_Score'])
+            self.value_score.append(selected_group['Total_Score'])
             
         # FINE FILTERING FOR GROWTH STOCKS
         filtered_fine_growth = [x for x in fine if x.EarningReports.TotalDividendPerShare.ThreeMonths
@@ -129,7 +130,7 @@ class HMMHybrid(QCAlgorithm):
         growth_data = {'Stock': [x.Symbol for x in filtered_fine_growth],
                     'MorningstarSectorCode': [x.AssetClassification.MorningstarSectorCode for x in filtered_fine_growth],
                     'TotalDividendPerShare.ThreeMonths': [x.EarningReports.TotalDividendPerShare.ThreeMonths if hasattr(x.EarningReports, 'TotalDividendPerShare') else 0 for x in filtered_fine_growth],
-                    'ROE': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
+                    'ROE.Value': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
                     'RevenueGrowth': [x.OperationRatios.RevenueGrowth.Value for x in filtered_fine_growth],
                     'BasicEPS.TwelveMonths': [x.EarningReports.BasicEPS.TwelveMonths for x in filtered_fine_growth]}
         df_growth = pd.DataFrame(growth_data)
@@ -140,7 +141,7 @@ class HMMHybrid(QCAlgorithm):
         factors_growth = ['TotalDividendPerShare.ThreeMonths', 'ROE', 'RevenueGrowth','BasicEPS.TwelveMonths']
 
         self.growth_long = []
-        self.growth_score = []
+        self.growth_score = np.array()
 
         for sector, group_growth in growth_grouped:
             factor_scores_growth = pd.DataFrame()
@@ -164,7 +165,7 @@ class HMMHybrid(QCAlgorithm):
             decile_threshold_growth = int(len(group_sorted_growth)*0.1)
             selected_group_growth = group_sorted_growth.iloc[:decile_threshold_growth]
             self.growth_long.extend(selected_group_growth['Stock'])
-            self.growth_score.extend(selected_group['Total_Score'])
+            self.growth_score.append(selected_group['Total_Score'])
 
         if self.switch == 'bear':
             return self.value_long , self.value_score
