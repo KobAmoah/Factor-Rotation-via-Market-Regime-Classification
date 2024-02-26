@@ -8,12 +8,12 @@
 # Factor-Rotation-via-Market-Regime-Classification
 The following adapts an implementation by ["Matthew Wang"](https://medium.com/@matthewwang_91639/algorithmic-factor-investing-with-market-regime-classification-6bc2f8c7168b) who proposes an investment strategy that leverages statistical modeling to take advantage of volatility clustering in financial time series data. He focuses on identifying different market regimes, i.e a bear, bull or neutral market, using a Hidden Markov Model (HMM) and then adapting the investing model to the current market regime - although his implementation was confined to switching between Momentum-type Growth model and the Fama-French 3-factor model.
 
-However, the Fama-French framework's plight is well documented which Robert D. Arnott and his co-authors(2021) attribute to poor factor definitions. To cater for poor factor definitions among other issues, I Matthew's his orignal framework to incorporate the following:
+However, the Fama-French framework's plight is well documented which Robert D. Arnott and his co-authors(2021) attribute to poor factor definitions. To cater for poor factor definitions among other issues, I modify Matthew's his orignal framework to incorporate the following:
 
 1. I  make more explicit Value and Growth Factors
 2. I apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection.
 3. I incorporate Quality into the Value Factor model as the implicit goal of the rotation is to deliver a factor framework that does well over all economic cycles.
-4. I substitute Matthew's original idea which is Leverage dependent, applied in a long-short framework and is rebalanced daily, to an application that is long only and is rebalanced monthly.
+4. I substitute Matthew's original idea which is Leverage dependent, applied in a long-short framework and is rebalanced daily, to an application that is long -only and is rebalanced monthly.
 5. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
 
 While the idea is targeted at institutional investors, for retail investors(individuals), it should be noted monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
