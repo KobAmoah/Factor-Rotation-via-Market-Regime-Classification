@@ -14,6 +14,7 @@ However, the Fama-French framework's plight is well documented which Robert D. A
 2. I apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection.
 3. I incorporate Quality into the Value Factor model as the implicit goal of the rotation is to deliver a factor framework that does well over all economic cycles.
 4. I substitute Matthew's original idea which is Leverage dependent, applied in a long-short framework and is rebalanced daily to an application that is long only and is rebalanced monthly.
+5. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
 
 While the idea is targeted to institutional investors, for retail investors(individuals), it should be noted monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
 
