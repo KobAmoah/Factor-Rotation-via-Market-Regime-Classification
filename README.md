@@ -16,7 +16,7 @@ However, the Fama-French framework's plight is well documented which Robert D. A
 4. I substitute Matthew's original idea which is Leverage dependent, applied in a long-short framework and is rebalanced daily, to an application that is long only and is rebalanced monthly.
 5. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
 
-While the idea is targeted to institutional investors, for retail investors(individuals), it should be noted monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
+While the idea is targeted at institutional investors, for retail investors(individuals), it should be noted monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
 
 *** I have not backtested the code on Quantconnect yet, but hope to do so sometime soon.
 
