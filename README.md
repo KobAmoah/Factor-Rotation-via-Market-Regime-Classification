@@ -8,7 +8,7 @@
 # Factor-Rotation-via-Market-Regime-Classification
 The following adapts an implementation by ["Matthew Wang"](https://medium.com/@matthewwang_91639/algorithmic-factor-investing-with-market-regime-classification-6bc2f8c7168b) who proposes an investment strategy that leverages statistical modeling to take advantage of volatility clustering in financial time series data. He focuses on identifying different market regimes, i.e a bear, bull or neutral market, using a Hidden Markov Model (HMM) and then adapting the investing model to the current market regime - although his implementation was confined to switching between Momentum-type Growth model and the Fama-French 3-factor model.
 
-However, the Fama-French framework's plight is well documented which Robert D. Arnott and his co-authors attribute to poor factor definitions. To cater for poor factor definitions among other issues, I Matthew's his orignal framework to incorporate the following:
+However, the Fama-French framework's plight is well documented which Robert D. Arnott and his co-authors(2021) attribute to poor factor definitions. To cater for poor factor definitions among other issues, I Matthew's his orignal framework to incorporate the following:
 
 1. I  make more explicit Value and Growth Factors
 2. I apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection.
@@ -49,4 +49,4 @@ While the idea is targeted at institutional investors, for retail investors(indi
 The strategy aims to optimize returns by adapting to different market regimes using a Hidden Markov Model, with a focus on switching between a Growth model and a Value factor model based on detected market conditions. The high-pass filter helps confirm regime shifts before making portfolio adjustments.
 
 ## Credits
-I am incredibly grateful to Matthew Wang for his research on the topic. His idea of dynamically adapting a portfolio between factor models using a Hidden Markov Model, which classifies market regimes (bear, bull, or neutral) inspired this project.
+I am incredibly grateful to Matthew Wang for his research on the topic. His idea of dynamically adapting a portfolio between factor models using a Hidden Markov Model, which classifies market regimes (bear, bull, or neutral) inspired this project. The referenced paper by Robert D. Anott et al. can be accessed at ["Reports of Value’s Death May Be Greatly Exaggerated"](https://www.tandfonline.com/doi/full/10.1080/0015198X.2020.1842704)
