@@ -1,9 +1,10 @@
 """
 Created on Sat Feb  24 2024
 
-This program derives off initial code by Matthew Wang that sets up a class for Factor Investing with Market Regime Classification to be tested on Quantconnect. 
-I make a couple of changes principally with the substitution of Fama-French framework with an explicit focus on Value and Growth Factor investing. 
-The core hypothesis remains the same - to prove that a hidden markov model that rotates between factor models depending on market conditions can perform better than the individual factor model themselves.
+    This program derives off initial code by Matthew Wang that sets up a class for Factor Investing with Market Regime 
+Classification to be tested on Quantconnect. I make a couple of changes principally with the substitution of FamaFrench framework with an explicit focus on Value and Growth Factor investing. 
+    The core hypothesis remains the same - to prove that a hidden markov model that rotates between factor models depending on
+market conditions can perform better than the individual factor model themselves. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
 
 original author: Matthew Wang
 https://medium.com/@matthewwang_91639/algorithmic-factor-investing-with-market-regime-classification-6bc2f8c7168b
@@ -88,7 +89,7 @@ class HMMHybrid(QCAlgorithm):
 
         value_factors = ['PBRatio', 'MarketCap','EarningYield','EVtoEBIT','FCFYield','LongTermDebtEquityRatio','OperationMargin']
         self.value_long = []
-
+        self.value_score = []
         for sector, group in value_grouped:
             factor_scores = pd.DataFrame()
 
@@ -111,10 +112,11 @@ class HMMHybrid(QCAlgorithm):
             decile_threshold = int(len(group_sorted)*0.1)
             selected_group = group_sorted.iloc[:decile_threshold]
             self.value_long.extend(selected_group['Stock'])
-
+            self.value_score.extend(selected_group['Total_Score'])
+            
         # FINE FILTERING FOR GROWTH STOCKS
         filtered_fine_growth = [x for x in fine if x.EarningReports.TotalDividendPerShare.ThreeMonths
-                                                and (x.OperationRatios.ROE.Value) *100
+                                                and ((x.OperationRatios.ROE.Value) *100) > 0
                                                 and x.EarningReports.BasicEPS.TwelveMonths
                                                 and (x.OperationRatios.RevenueGrowth.Value) * 100]
 
@@ -122,7 +124,7 @@ class HMMHybrid(QCAlgorithm):
         growth_data = {'Stock': [x.Symbol for x in filtered_fine_growth],
                     'MorningstarSectorCode': [x.AssetClassification.MorningstarSectorCode for x in filtered_fine_growth],
                     'TotalDividendPerShare.ThreeMonths': [x.EarningReports.TotalDividendPerShare.ThreeMonths if hasattr(x.EarningReports, 'TotalDividendPerShare') else 0 for x in filtered_fine_growth],
-                    'ROE': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
+                    'ROE.Value': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
                     'RevenueGrowth': [x.OperationRatios.RevenueGrowth.Value for x in filtered_fine_growth],
                     'BasicEPS.TwelveMonths': [x.EarningReports.BasicEPS.TwelveMonths for x in filtered_fine_growth]}
         df_growth = pd.DataFrame(growth_data)
@@ -130,15 +132,16 @@ class HMMHybrid(QCAlgorithm):
 
         # Group by sector for Growth stocks
         growth_grouped = df_growth.groupby('MorningstarSectorCode')
-        factors_growth = ['TotalDividendPerShare.ThreeMonths', 'ROE', 'RevenueGrowth','BasicEPS.TwelveMonths']
+        factors_growth = ['TotalDividendPerShare.ThreeMonths', 'ROE.Value', 'RevenueGrowth','BasicEPS.TwelveMonths']
 
         self.growth_long = []
+        self.growth_score = []
 
         for sector, group_growth in growth_grouped:
             factor_scores_growth = pd.DataFrame()
 
             for factor_growth in factors_growth:
-                if factor_growth not in [ 'ROE','RevenueGrowth']:
+                if factor_growth not in [ 'ROE.Value','RevenueGrowth.Value']:
                     group_growth[factor_growth] = (group_growth[factor_growth] - group_growth[factor_growth].mean())/group_growth[factor_growth].std()
                     group_growth[factor_growth] = group_growth[factor_growth].rank(ascending=True)
                     factor_scores_growth[factor_growth + '_Score'] = group_growth[factor_growth]
@@ -156,11 +159,12 @@ class HMMHybrid(QCAlgorithm):
             decile_threshold_growth = int(len(group_sorted_growth)*0.1)
             selected_group_growth = group_sorted_growth.iloc[:decile_threshold_growth]
             self.growth_long.extend(selected_group_growth['Stock'])
+            self.growth_score.extend(selected_group['Total_Score'])
 
         if self.switch == 'bear':
-            return self.value_long
+            return self.value_long , self.value_score
         else:
-            return self.growth_long
+            return self.growth_long , self.growth_score
 
 
     def OnData(self, data):
@@ -191,18 +195,20 @@ class HMMHybrid(QCAlgorithm):
             self.GrowthModel()
 
     def Value(self):
+        #self.Log("Value")
         for kvp in self.Portfolio:
             if kvp.Value.Invested and not (kvp.Key in self.value_long):
                 self.SetHoldings(kvp.Key, 0)
-        for i in self.value_long:
-            self.SetHoldings(i, 1/len(self.value_long))
+        for symbol, score in zip(self.value_long, self.value_score):
+            self.SetHoldings(symbol, score / np.sum(self.value_score))
 
     def GrowthModel(self):
+        #self.Log("Growth Model")
         for kvp in self.Portfolio:
             if kvp.Value.Invested and not kvp.Key in self.growth_long:
                 self.SetHoldings(kvp.Key, 0)
-        for i in self.growth_long:
-            self.SetHoldings(i, 1/len(self.growth_long))
+        for symbol, score in zip(self.growth_long, self.growth_score):
+            self.SetHoldings(symbol, score / np.sum(self.growth_score))
 
     def MarketClose(self):
         self.daily_return = 100*((self.Portfolio.TotalPortfolioValue - self.prev_value)/self.prev_value)
@@ -216,7 +222,11 @@ class HMMHybrid(QCAlgorithm):
         hidden_states = 3;
         em_iterations = 75;
         data_length = 2520;
-        
+        # num_models = 7;
+
+        #history = self.History("SPY", 2718, Resolution.Daily)
+        #prices = list(history.loc["SPY"]['close'])
+
         history = self.History(self.symbols, data_length, Resolution.Daily)
         for symbol in self.symbols:
             if not history.empty:
@@ -302,10 +312,10 @@ class HMMHybrid(QCAlgorithm):
         # > 0.3 Low-Pass Filter
         bear = -1
         bull = -1
-        thresh_return = 0
+        thresh_return = 0.5
         low_vol = 100
         for i in range(0,hidden_states):
-            if sum(regime_ret[i])/len(regime_ret[i])< thresh_return:
+            if sum(regime_ret[i])/len(regime_ret[i])< -thresh_return:
                 bear = i
             if sum(regime_ret[i])/len(regime_ret[i]) > thresh_return:
                 bull = i
