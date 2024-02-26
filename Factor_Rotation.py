@@ -233,7 +233,7 @@ class HMMHybrid(QCAlgorithm):
                 prices = list(history.loc[symbol.Value]['close'])
 
         # Volatility is computed by obtaining variance between current close and
-        # prices of past 30 days
+        # prices of past 21 trading days
         Volatility = []
 
         # MA is the 21 day SMA
