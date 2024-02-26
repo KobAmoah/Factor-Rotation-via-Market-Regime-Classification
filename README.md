@@ -12,7 +12,7 @@ However, the Fama-French framework's plight is well documented which Robert D. A
 
 While the idea is targeted to institutional investors, for retail investors(individuals), it should be noted monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
 
-*** I have not backtested the code on Quantconnect yet, but hope to do sometime soon. Additionally, I'll make a change in the original code by switching from an equally-weighted portfolio to a score weighted portfolio. This is done to ensure the portfolio mimics appropriately its style propensity.
+*** I have not backtested the code on Quantconnect yet, but hope to do so sometime soon. Additionally, I'll make a change in the original code by switching from an equally-weighted portfolio to a score weighted portfolio. This is done to ensure the portfolio mimics appropriately its style propensity.
 
 ### Theory:
 - Volatility Clustering: Financial time series data often exhibits volatility clustering, where the variance of returns persists over time.
