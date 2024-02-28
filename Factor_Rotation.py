@@ -110,15 +110,15 @@ class HMMHybrid(QCAlgorithm):
                     factor_scores[factor + '_Score'] = rank
                     
 
-            # Combine scores for each factor
-            group['Total_Score'] = factor_scores.sum(axis=1)
-            group_sorted = group.sort_values(by='Total_Score')
+            # Average scores for each factor
+            group['Standardized_Score'] = factor_scores.mean(axis=1)/factor_scores.std(axis=1)
+            group_sorted = group.sort_values(by='Standardized_Score')
 
             # Select the highest decile stocks
             decile_threshold = int(len(group_sorted)*0.1)
             selected_group = group_sorted.iloc[:decile_threshold]
             self.value_long.extend(selected_group['Stock'])
-            self.value_score.append(selected_group['Total_Score'])
+            self.value_score.append(selected_group['Standardized_Score'])
             
         # FINE FILTERING FOR GROWTH STOCKS
         filtered_fine_growth = [x for x in fine if x.EarningReports.TotalDividendPerShare.ThreeMonths
@@ -157,15 +157,15 @@ class HMMHybrid(QCAlgorithm):
 
 
 
-            # Combine scores for each factor
-            group_growth['Total_Score'] = factor_scores_growth.sum(axis=1)
-            group_sorted_growth = group_growth.sort_values(by='Total_Score', ascending=False)
+            # Average scores for each factor
+            group_growth['Standardized_Score'] = factor_scores_growth.mean(axis=1)/factor_scores_growth.std(axis=1)
+            group_sorted_growth = group_growth.sort_values(by='Standardized_Score', ascending=False)
 
             # Select the highest decile stocks
             decile_threshold_growth = int(len(group_sorted_growth)*0.1)
             selected_group_growth = group_sorted_growth.iloc[:decile_threshold_growth]
             self.growth_long.extend(selected_group_growth['Stock'])
-            self.growth_score.append(selected_group['Total_Score'])
+            self.growth_score.append(selected_group['Standardized_Score'])
 
         if self.switch == 'bear':
             return self.value_long , self.value_score
@@ -233,7 +233,7 @@ class HMMHybrid(QCAlgorithm):
                 prices = list(history.loc[symbol.Value]['close'])
 
         # Volatility is computed by obtaining variance between current close and
-        # prices of past 21 trading days
+        # prices of past 21 days
         Volatility = []
 
         # MA is the 21 day SMA
