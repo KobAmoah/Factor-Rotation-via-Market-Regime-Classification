@@ -6,8 +6,7 @@ Classification to be tested on Quantconnect. It differs from Matthew's implement
 1. I substitute the FamaFrench framework with an explicit focus on Value and Growth Factor investing. 
 2. I apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection.
 3. I incorporate quality in the Value Factor model to make it more robust to shifting economic cycles.
-4. This application is long-only and is rebalanced monthly.
-5. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
+4. This application is long-only and is rebalanced only when the model detects a shift in economic conditions.
 
     The core hypothesis remains the same - to prove that a hidden markov model that rotates between factor models depending on
 market conditions can perform better than the individual factor model themselves. 
@@ -24,7 +23,6 @@ import pandas as pd
 import scipy as scipy
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
 from hmmlearn import hmm
 from AlgorithmImports import *
 
@@ -68,7 +66,8 @@ class HMMHybrid(QCAlgorithm):
         # drop stocks which don't have the information we need.
         # you can try replacing those factors with your own factors here
 
-        filtered_fine = [x for x in fine if (x.ValuationRatios.EVtoEBIT) > 0
+        
+        filtered_fine = [x for x in fine if (x.ValuationRatios.EVToEBIT) > 0
                                         and x.ValuationRatios.PBRatio
                                         and x.MarketCap 
                                         and (x.ValuationRatios.FCFYield) > 0
@@ -84,7 +83,7 @@ class HMMHybrid(QCAlgorithm):
                     'PBRatio': [x.ValuationRatios.PBRatio for x in filtered_fine],
                     'MarketCap': [x.MarketCap for x in filtered_fine],
                     'EarningYield':[x.ValuationRatios.EarningYield for x in filtered_fine],
-                    'EVtoEBIT':[x.ValuationRatios.EVtoEBIT for x in filtered_fine],
+                    'EVToEBIT':[x.ValuationRatios.EVToEBIT for x in filtered_fine],
                     'LongTermDebtEquityRatio':[x.OperationRatios.LongTermDebtEquityRatio.Value for x in filtered_fine],
                     'OperationMargin':[x.OperationRatios.OperationMargin.Value for x in filtered_fine]}
 
@@ -93,9 +92,8 @@ class HMMHybrid(QCAlgorithm):
         # Group by sector for Value stocks
         value_grouped = df_value.groupby('MorningstarSectorCode')
 
-        value_factors = ['PBRatio', 'MarketCap','EarningYield','EVtoEBIT','FCFYield','LongTermDebtEquityRatio','OperationMargin']
-        self.value_long = []
-        self.value_score = np.array()
+        value_factors = ['PBRatio', 'MarketCap','EarningYield','EVToEBIT','FCFYield','LongTermDebtEquityRatio','OperationMargin']
+        
         for sector, group in value_grouped:
             factor_scores = pd.DataFrame()
 
@@ -109,7 +107,6 @@ class HMMHybrid(QCAlgorithm):
                     rank = group[factor].apply(np.log).rank(ascending=True)
                     factor_scores[factor + '_Score'] = rank
                     
-
             # Average scores for each factor
             group['Standardized_Score'] = factor_scores.mean(axis=1)/factor_scores.std(axis=1)
             group_sorted = group.sort_values(by='Standardized_Score')
@@ -117,8 +114,7 @@ class HMMHybrid(QCAlgorithm):
             # Select the highest decile stocks
             decile_threshold = int(len(group_sorted)*0.1)
             selected_group = group_sorted.iloc[:decile_threshold]
-            self.value_long.extend(selected_group['Stock'])
-            self.value_score.append(selected_group['Standardized_Score'])
+            self.value_long = selected_group['Stock'].tolist()
             
         # FINE FILTERING FOR GROWTH STOCKS
         filtered_fine_growth = [x for x in fine if x.EarningReports.TotalDividendPerShare.ThreeMonths
@@ -130,7 +126,7 @@ class HMMHybrid(QCAlgorithm):
         growth_data = {'Stock': [x.Symbol for x in filtered_fine_growth],
                     'MorningstarSectorCode': [x.AssetClassification.MorningstarSectorCode for x in filtered_fine_growth],
                     'TotalDividendPerShare.ThreeMonths': [x.EarningReports.TotalDividendPerShare.ThreeMonths if hasattr(x.EarningReports, 'TotalDividendPerShare') else 0 for x in filtered_fine_growth],
-                    'ROE.Value': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
+                    'ROE': [x.OperationRatios.ROE.Value for x in filtered_fine_growth],
                     'RevenueGrowth': [x.OperationRatios.RevenueGrowth.Value for x in filtered_fine_growth],
                     'BasicEPS.TwelveMonths': [x.EarningReports.BasicEPS.TwelveMonths for x in filtered_fine_growth]}
         df_growth = pd.DataFrame(growth_data)
@@ -140,8 +136,6 @@ class HMMHybrid(QCAlgorithm):
         growth_grouped = df_growth.groupby('MorningstarSectorCode')
         factors_growth = ['TotalDividendPerShare.ThreeMonths', 'ROE', 'RevenueGrowth','BasicEPS.TwelveMonths']
 
-        self.growth_long = []
-        self.growth_score = np.array()
 
         for sector, group_growth in growth_grouped:
             factor_scores_growth = pd.DataFrame()
@@ -149,13 +143,11 @@ class HMMHybrid(QCAlgorithm):
             for factor_growth in factors_growth:
                 if factor_growth not in [ 'ROE','RevenueGrowth']:
                     group_growth[factor_growth] = (group_growth[factor_growth] - group_growth[factor_growth].mean())/group_growth[factor_growth].std()
-                    group_growth[factor_growth] = group_growth[factor_growth].rank(ascending=True)
-                    factor_scores_growth[factor_growth + '_Score'] = group_growth[factor_growth]
+                    rank_growth = group_growth[factor_growth].rank(ascending=True)
+                    factor_scores_growth[factor_growth + '_Score'] = rank_growth
                 else:
-                    group_growth[factor_growth] = group_growth[factor_growth].rank(ascending=True)
-                    factor_scores_growth[factor_growth + '_Score'] = group_growth[factor_growth]
-
-
+                    rank_growth = group_growth[factor_growth].rank(ascending=True)
+                    factor_scores_growth[factor_growth + '_Score'] = rank_growth
 
             # Average scores for each factor
             group_growth['Standardized_Score'] = factor_scores_growth.mean(axis=1)/factor_scores_growth.std(axis=1)
@@ -164,13 +156,12 @@ class HMMHybrid(QCAlgorithm):
             # Select the highest decile stocks
             decile_threshold_growth = int(len(group_sorted_growth)*0.1)
             selected_group_growth = group_sorted_growth.iloc[:decile_threshold_growth]
-            self.growth_long.extend(selected_group_growth['Stock'])
-            self.growth_score.append(selected_group['Standardized_Score'])
+            self.growth_long  = selected_group_growth['Stock'].tolist()
 
         if self.switch == 'bear':
-            return self.value_long , self.value_score
+            return self.value_long 
         else:
-            return self.growth_long , self.growth_score
+            return self.growth_long 
 
 
     def OnData(self, data):
@@ -204,15 +195,15 @@ class HMMHybrid(QCAlgorithm):
         for kvp in self.Portfolio:
             if kvp.Value.Invested and not (kvp.Key in self.value_long):
                 self.SetHoldings(kvp.Key, 0)
-        for symbol, score in zip(self.value_long, self.value_score):
-            self.SetHoldings(symbol, score / np.sum(self.value_score))
+        for symbol in self.value_long:
+            self.SetHoldings(symbol, 1/len(self.value_long))
 
     def GrowthModel(self):
         for kvp in self.Portfolio:
             if kvp.Value.Invested and not kvp.Key in self.growth_long:
                 self.SetHoldings(kvp.Key, 0)
-        for symbol, score in zip(self.growth_long, self.growth_score):
-            self.SetHoldings(symbol, score / np.sum(self.growth_score))
+        for symbol in self.growth_long:
+            self.SetHoldings(symbol, 1/len(self.growth_long))
 
     def MarketClose(self):
         self.daily_return = 100*((self.Portfolio.TotalPortfolioValue - self.prev_value)/self.prev_value)
@@ -222,9 +213,9 @@ class HMMHybrid(QCAlgorithm):
 
     def train(self):
         # Hidden Markov Model Modifiable Parameters
-        hidden_states = 3;
-        em_iterations = 75;
-        data_length = 2520;
+        hidden_states = 3
+        em_iterations = 75
+        data_length = 2520
 
         history = self.History(self.symbols, data_length, Resolution.Daily)
         for symbol in self.symbols:
@@ -241,61 +232,61 @@ class HMMHybrid(QCAlgorithm):
 
         # Return is the single-day percentage return
         Return = []
-        ma_sum = 0;
+        ma_sum = 0
 
         # Warming up data for moving average and volatility calculations
         for i in range (0, 21):
-            Volatility.append(0);
-            MA.append(0);
-            Return.append(0);
-            ma_sum += prices[i];
+            Volatility.append(0)
+            MA.append(0)
+            Return.append(0)
+            ma_sum += prices[i]
         # Filling in data for return, moving average, and volatility
         for i in range(0, len(prices)):
             if i >= 21:
-                tail_close = prices[i-21];
-                prev_close = prices[i-1];
-                head_close = prices[i];
-                ma_sum = (ma_sum - tail_close + head_close);
-                ma_curr = ma_sum/21;
-                MA.append(ma_curr);
-                Return.append(((head_close-prev_close)/prev_close)*100);
+                tail_close = prices[i-21]
+                prev_close = prices[i-1]
+                head_close = prices[i]
+                ma_sum = (ma_sum - tail_close + head_close)
+                ma_curr = ma_sum/21
+                MA.append(ma_curr)
+                Return.append(((head_close-prev_close)/prev_close)*100)
                 #Computing Volatility
-                vol_sum = 0;
+                vol_sum = 0
                 for j in range (0, 21):
-                    curr_vol = abs(ma_curr - prices[i-j]);
-                    vol_sum += (curr_vol ** 2);
-                Volatility.append(vol_sum/21);
+                    curr_vol = abs(ma_curr - prices[i-j])
+                    vol_sum += (curr_vol ** 2)
+                Volatility.append(vol_sum/21)
 
         prices = prices[21:]
         Volatility = Volatility[21:]
         Return = Return[21:]
-
+        
         # Creating the Hidden Markov Model
         model = hmm.GaussianHMM(n_components = hidden_states,
-                                covariance_type="full", n_iter = em_iterations);
+                                covariance_type="full", n_iter = em_iterations)
 
-        obs = [];
+        obs = []
         for i in range(0, len(Volatility)):
-            arr = [];
-            arr.append(Volatility[i]);
-            arr.append(Return[i]);
-            obs.append(arr);
+            arr = []
+            arr.append(Volatility[i])
+            arr.append(Return[i])
+            obs.append(arr)
 
         # Fitting the model and obtaining predictions
         model.fit(obs)
         predictions = model.predict(obs)
 
         # Regime Classification
-        regime_vol = {};
-        regime_ret = {};
+        regime_vol = {}
+        regime_ret = {}
 
         for i in range(0, hidden_states):
-            regime_vol[i] = [];
-            regime_ret[i] = [];
+            regime_vol[i] = []
+            regime_ret[i] = []
 
         for i in range(0, len(predictions)):
-            regime_vol[predictions[i]].append(Volatility[i]);
-            regime_ret[predictions[i]].append(Return[i]);
+            regime_vol[predictions[i]].append(Volatility[i])
+            regime_ret[predictions[i]].append(Return[i])
 
         vols = []
         rets = []
@@ -308,18 +299,21 @@ class HMMHybrid(QCAlgorithm):
             ret_dist.Fit(regime_ret[i])
             rets.append(ret_dist.PDF(Return[-1]))
 
-        # > 0.3 Low-Pass Filter
+        # > 0.5 Low-Pass Filter
         bear = -1
         bull = -1
-        thresh_return = 0.5
+        neg_return = 1
+        pos_return = -1
         low_vol = 100
-        for i in range(0,hidden_states):
-            if sum(regime_ret[i])/len(regime_ret[i])< -thresh_return:
+        for i in range(0, hidden_states):
+            if sum(regime_ret[i]) / len(regime_ret[i]) < neg_return:
+                neg_return = sum(regime_ret[i]) / len(regime_ret[i])
                 bear = i
-            if sum(regime_ret[i])/len(regime_ret[i]) > thresh_return:
+            if sum(regime_ret[i]) / len(regime_ret[i]) > pos_return:
+                pos_return = sum(regime_ret[i]) / len(regime_ret[i])
                 bull = i
-            
-        if vols[today_regime] / sum(vols) >= 0.3 and abs(rets[today_regime] / sum(rets)) >= 0.3:
+
+        if vols[today_regime] / sum(vols) >= 0.3 and rets[today_regime] / sum(rets) >= 0.5:
             if bear == today_regime:
                 return 'bear'
             else:
@@ -350,7 +344,7 @@ class Distribution(object):
             param = dist.fit(y)
             self.params[dist_name] = param
             #Applying the Kolmogorov-Smirnov test
-            D, p = scipy.stats.kstest(y, dist_name, args=param);
+            D, p = scipy.stats.kstest(y, dist_name, args=param)
             self.dist_results.append((dist_name,p))
 
         #select the best fitted distribution
