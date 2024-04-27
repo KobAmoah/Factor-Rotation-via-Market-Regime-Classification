@@ -13,12 +13,9 @@ However, the Fama-French framework's plight is well documented which Robert D. A
 1. I  make more explicit Value and Growth Factors
 2. I apply sector neutralization to reduce the distributional effects of each factor in biasing the stock selection.
 3. I incorporate Quality into the Value Factor model as the implicit goal of the rotation is to deliver a factor framework that does well over all economic cycles.
-4. I substitute Matthew's original idea which is Leverage dependent, applied in a long-short framework and is rebalanced daily, to an application that is long -only and is rebalanced monthly.
-5. The created portfolio is score weighted to ensure it mimics appropriately its style propensity.
+4. I substitute Matthew's original idea which is Leverage dependent, applied in a long-short framework and is rebalanced daily, to an application that is long -only and is is rebalanced only when the model detects a shift in economic conditions.
 
-While the idea is targeted at institutional investors, for retail investors(individuals), it should be noted monthly trading will lead to accumulating tax costs. To reduce the tax impact of trading, one can modify rebalance rule to only rebalance when the signal changes or after the signal fails to change for a predefined number of months.
-
-*** I have not backtested the code on Quantconnect yet, but hope to do so sometime soon.
+The idea can be applied not only at the institutional level, but at the retail(individual) level as well. The framework is designed to take into account accumulating tax costs on performance.
 
 ### Theory:
 - Volatility Clustering: Financial time series data often exhibits volatility clustering, where the variance of returns persists over time.
@@ -44,6 +41,16 @@ While the idea is targeted at institutional investors, for retail investors(indi
 - Regime Detection: Used a sliding window of 2520 points to train the HMM daily for regime detection.
 - Regime Switching: Switched between Growth and Value factor models based on detected regimes.
 - Regime Confirmation: Implemented a high-pass filter using the Kolmogorov-Smirnov test to confirm regime shifts before switching models.
+
+### Performance:
+The following is the strategy's performance over a 10 year window from 2013-12-31 to 2023-12-31. The SPY returned an annualized performance of 12.7% over the period with the strategy returning 18.26% on an annualized basis.
+
+<img width="736" alt="Factor Rotation 1" src="https://github.com/KobAmoah/Factor-Rotation-via-Market-Regime-Classification/assets/108365002/a6003965-0232-4b38-a664-dcc6f5a8f7ea">
+
+<img width="723" alt="Factor Rotation 2" src="https://github.com/KobAmoah/Factor-Rotation-via-Market-Regime-Classification/assets/108365002/c6620caa-1e43-442c-9798-da3857a33228">
+
+<img width="722" alt="Factor Rotation 3" src="https://github.com/KobAmoah/Factor-Rotation-via-Market-Regime-Classification/assets/108365002/861f890b-8a8a-44ea-af75-72f2ed19109d">
+
 
 ### Conclusion:
 The strategy aims to optimize returns by adapting to different market regimes using a Hidden Markov Model, with a focus on switching between a Growth model and a Value factor model based on detected market conditions. The high-pass filter helps confirm regime shifts before making portfolio adjustments.
